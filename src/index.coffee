@@ -42,8 +42,9 @@ handler = (script) -> (req, res) ->
   collection= req.query.collection
   scriptCmd = path.join config.getConf().scriptsDirectory, script.filename
   args = buildArgs script
-  
-  cmd = spawn scriptCmd, args, env: setupEnv(script)
+  argsFromRequest = [format, collection]
+  #cmd = spawn scriptCmd, args, env: setupEnv(script)
+  cmd = spawn scriptCmd, argsFromRequest
   logger.info "[#{openhimTransactionID}] Executing #{scriptCmd} #{args.join ' '}"
   logger.info "Format is #{format} and collection is #{collection}"
 
