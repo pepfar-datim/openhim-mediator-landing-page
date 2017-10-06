@@ -39,6 +39,16 @@ setupEnv = (script) ->
 handler = (script) -> (req, res) ->
   openhimTransactionID = req.headers['x-openhim-transactionid']
   format = req.query.format
+  format = format.toLowerCase()
+  contenttype = ''
+  if format == 'json'
+    contenttype = 'application/json'
+  if format == 'html'
+    contenttype = 'text/html'
+  if format == 'xml'
+    contenttype = 'application/xml'
+  if format == 'csv'
+    contenttype = 'application/csv'
   collection= req.query.collection
   scriptCmd = path.join config.getConf().scriptsDirectory, script.filename
   args = buildArgs script
@@ -55,18 +65,23 @@ handler = (script) -> (req, res) ->
 
   cmd.on 'close', (code) ->
     logger.info "[#{openhimTransactionID}] Script exited with status #{code}"
+    #res.set 'Content-Type', 'application/json+openhim'
+    res.set 'Content-Type', contenttype
+    if format == 'csv'
+      res.set 'Content-Disposition', 'inline; filename="'+collection+'.csv"' 
+    res.send out
 
-    res.set 'Content-Type', 'application/json+openhim'
-    res.send {
-      'x-mediator-urn': config.getMediatorConf().urn
-      status: if code == 0 then 'Successful' else 'Failed'
-      response:
-        status: if code == 0 then 200 else 500
-        headers:
-          'content-type': 'application/json'
-        body: out
-        timestamp: new Date()
-    }
+      #'x-mediator-urn': config.getMediatorConf().urn
+      #status: if code == 0 then 'Successful' else 'Failed'
+      #response:
+        #status: if code == 0 then 200 else 500
+        #headers:
+         # 'content-type': contenttype
+        #body: out
+     
+     #   out
+        #timestamp: new Date()
+    
 
 
 # Express
