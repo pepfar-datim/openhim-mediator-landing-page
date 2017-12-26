@@ -39,7 +39,10 @@ setupEnv = (script) ->
 handler = (script) -> (req, res) ->
   openhimTransactionID = req.headers['x-openhim-transactionid']
   format = req.query.format
-  format = format.toLowerCase()
+  try
+    format = format.toLowerCase()
+  catch e  
+     res.send "Undefined Collection"
   contenttype = ''
   if format == 'json'
     contenttype = 'application/json'
