@@ -53,9 +53,13 @@ handler = (script) -> (req, res) ->
   if format == 'csv'
     contenttype = 'application/csv'
   collection= req.query.collection
+  country_code= req.query.country_code
+  period= req.query.period
   scriptCmd = path.join config.getConf().scriptsDirectory, script.filename
   args = buildArgs script
   argsFromRequest = [format, collection]
+  if !collection?
+     argsFromRequest = [country_code,format,period]
   #cmd = spawn scriptCmd, args, env: setupEnv(script)
   cmd = spawn scriptCmd, argsFromRequest
   logger.info "[#{openhimTransactionID}] Executing #{scriptCmd} #{args.join ' '}"
