@@ -55,11 +55,13 @@ handler = (script) -> (req, res) ->
   collection= req.query.collection
   country_code= req.query.country_code
   period= req.query.period
+  verbosity= req.query.verbosity
+  exclude_empty_maps= req.query.exclude_empty_maps
   scriptCmd = path.join config.getConf().scriptsDirectory, script.filename
   args = buildArgs script
   argsFromRequest = [format, collection]
   if !collection?
-     argsFromRequest = [country_code,format,period]
+     argsFromRequest = [country_code,format,period,verbosity,exclude_empty_maps]
   #cmd = spawn scriptCmd, args, env: setupEnv(script)
   cmd = spawn scriptCmd, argsFromRequest
   logger.info "[#{openhimTransactionID}] Executing #{scriptCmd} #{args.join ' '}"
