@@ -71,7 +71,8 @@ handler = (script) -> (req, res) ->
   appendToOut = (data) -> out = "#{out}#{data}"
   cmd.stdout.on 'data', appendToOut
   cmd.stderr.on 'data', appendToOut
-
+  
+  res.set 'Access-Control-Allow-Origin', '*'
   cmd.on 'close', (code) ->
     logger.info "[#{openhimTransactionID}] Script exited with status #{code}"
     #res.set 'Content-Type', 'application/json+openhim'
