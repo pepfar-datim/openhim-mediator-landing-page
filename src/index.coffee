@@ -69,11 +69,15 @@ handler = (script) -> (req, res) ->
     exclude_empty_maps='true'
   else
     exclude_empty_maps= req.query.exclude_empty_maps
+  unless req.query.include_extra_info
+    include_extra_info='false'
+  else
+    include_extra_info= req.query.include_extra_info
   scriptCmd = path.join config.getConf().scriptsDirectory, script.filename
   args = buildArgs script
   argsFromRequest = [format, collection]
   if !collection?
-     argsFromRequest = [country_code,format,period,verbosity,exclude_empty_maps]
+     argsFromRequest = [country_code,format,period,verbosity,exclude_empty_maps,include_extra_info]
   #cmd = spawn scriptCmd, args, env: setupEnv(script)
   cmd = spawn scriptCmd, argsFromRequest
   logger.info "[#{openhimTransactionID}] Executing #{scriptCmd} #{args.join ' '}"
