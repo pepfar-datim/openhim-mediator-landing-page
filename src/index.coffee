@@ -38,7 +38,10 @@ setupEnv = (script) ->
 
 handler = (script) -> (req, res) ->
   openhimTransactionID = req.headers['x-openhim-transactionid']
-  format = req.query.format
+  unless req.query.format
+    format = 'csv'
+  else
+    format = req.query.format
   try
     format = format.toLowerCase()
   catch e  
@@ -54,9 +57,18 @@ handler = (script) -> (req, res) ->
     contenttype = 'application/csv'
   collection= req.query.collection
   country_code= req.query.country_code
-  period= req.query.period
-  verbosity= req.query.verbosity
-  exclude_empty_maps= req.query.exclude_empty_maps
+  unless req.query.period
+    period= "default"
+  else
+    period= req.query.period
+  unless req.query.verbosity
+    verbosity= 0
+  else
+    verbosity= req.query.verbosity
+  unless req.query.exclude_empty_maps
+    exclude_empty_maps='true'
+  else
+    exclude_empty_maps= req.query.exclude_empty_maps
   scriptCmd = path.join config.getConf().scriptsDirectory, script.filename
   args = buildArgs script
   argsFromRequest = [format, collection]
