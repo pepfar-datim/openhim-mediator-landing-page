@@ -38,6 +38,7 @@ setupEnv = (script) ->
 
 handler = (script) -> (req, res) ->
   openhimTransactionID = req.headers['x-openhim-transactionid']
+
   unless req.query.format
     format = 'csv'
   else
@@ -92,21 +93,28 @@ handler = (script) -> (req, res) ->
   cmd.on 'close', (code) ->
     logger.info "[#{openhimTransactionID}] Script exited with status #{code}"
     #res.set 'Content-Type', 'application/json+openhim'
+
+    if req.path == '/datim-imap-export'
+      outputObject = JSON.parse(out)
+      if outputObject.status_code == 409
+        res.set 'Content-Type', 'application/json+openhim'
+        res.send {
+          'x-mediator-urn': config.getMediatorConf().urn
+          status: 'Failed'
+          response:
+            status: outputObject.status_code
+            headers:
+              'content-type': 'text/plain'
+              'Access-Control-Allow-Origin' : '*'
+            body: outputObject.result
+            timestamp: new Date()
+        }
+      
     res.set 'Content-Type', contenttype
     if format == 'csv'
       res.set 'Content-Disposition', 'inline; filename="'+collection+'.csv"' 
     res.send out
 
-      #'x-mediator-urn': config.getMediatorConf().urn
-      #status: if code == 0 then 'Successful' else 'Failed'
-      #response:
-        #status: if code == 0 then 200 else 500
-        #headers:
-         # 'content-type': contenttype
-        #body: out
-     
-     #   out
-        #timestamp: new Date()
     
 
 
