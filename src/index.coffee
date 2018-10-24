@@ -11,8 +11,6 @@ fs = require 'fs'
 path = require 'path'
 spawn = require('child_process').spawn
 
-
-
 buildArgs = (script) ->
   args = []
 
@@ -74,13 +72,18 @@ handler = (script) -> (req, res) ->
     include_extra_info='false'
   else
     include_extra_info= req.query.include_extra_info
+  import_task_id= req.query.import_task_id
   scriptCmd = path.join config.getConf().scriptsDirectory, script.filename
   args = buildArgs script
   argsFromRequest = [format, collection]
   if !collection?
      argsFromRequest = [country_code,format,period,verbosity,exclude_empty_maps,include_extra_info]
   #cmd = spawn scriptCmd, args, env: setupEnv(script)
-  cmd = spawn scriptCmd, argsFromRequest
+  if req.path == '/datim-imap-status'
+    argsFromRequest = [scriptCmd, import_task_id]
+    cmd = spawn 'python', argsFromRequest
+  else 
+    cmd = spawn scriptCmd, argsFromRequest
   logger.info "[#{openhimTransactionID}] Executing #{scriptCmd} #{args.join ' '}"
   logger.info "Format is #{format} and collection is #{collection}"
 
@@ -95,6 +98,7 @@ handler = (script) -> (req, res) ->
     #res.set 'Content-Type', 'application/json+openhim'
 
     if req.path == '/datim-imap-export'
+
       outputObject = JSON.parse(out)
       if outputObject.status_code == 409
         res.set 'Content-Type', 'application/json+openhim'
@@ -109,6 +113,21 @@ handler = (script) -> (req, res) ->
             body: outputObject.result
             timestamp: new Date()
         }
+    if req.path == '/datim-imap-status'
+
+      outputObject = JSON.parse(out)
+      res.set 'Content-Type', 'application/json+openhim'
+      res.send {
+        'x-mediator-urn': config.getMediatorConf().urn
+        status: if outputObject.status_code == 200 or outputObject.status_code == 202 then 'Successful' else 'Failed'
+        response:
+          status: outputObject.status_code
+          headers:
+            'content-type': 'text/plain'
+            'Access-Control-Allow-Origin' : '*'
+          body: outputObject.result
+          timestamp: new Date()
+      }
       
     res.set 'Content-Type', contenttype
     if format == 'csv'
@@ -138,6 +157,7 @@ startExpress = ->
 
     app = express()
     app.use bodyParser.json()
+    app.disable('etag')
 
     if config.getConf().scripts
       for script in config.getConf().scripts
