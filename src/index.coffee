@@ -98,8 +98,34 @@ handler = (script) -> (req, res) ->
     #res.set 'Content-Type', 'application/json+openhim'
 
     if req.path == '/datim-imap-export'
-
-      outputObject = JSON.parse(out)
+      unless req.query.country_code
+        res.set 'Content-Type', 'application/json+openhim'
+        res.send {
+          'x-mediator-urn': config.getMediatorConf().urn
+          status: 'Failed'
+          response:
+            status: 400
+            headers:
+              'content-type': 'text/plain'
+              'Access-Control-Allow-Origin' : '*'
+            body: "country_code is a required parameter"
+            timestamp: new Date()
+        }
+      try
+        outputObject = JSON.parse(out)
+      catch e
+        res.set 'Content-Type', 'application/json+openhim'
+        res.send {
+          'x-mediator-urn': config.getMediatorConf().urn
+          status: 'Failed'
+          response:
+            status: 404
+            headers:
+              'content-type': 'text/plain'
+              'Access-Control-Allow-Origin' : '*'
+            body: out
+            timestamp: new Date()
+        }
       if outputObject.status_code == 409
         res.set 'Content-Type', 'application/json+openhim'
         res.send {
