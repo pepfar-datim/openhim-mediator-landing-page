@@ -82,6 +82,9 @@ handler = (script) -> (req, res) ->
   if req.path == '/datim-imap-status'
     argsFromRequest = [scriptCmd, import_task_id]
     cmd = spawn 'python', argsFromRequest
+  else if req.path == '/datim-moh'
+      argsFromRequest = [scriptCmd, format, period]
+      cmd = spawn 'python', argsFromRequest
   else 
     cmd = spawn scriptCmd, argsFromRequest
   logger.info "[#{openhimTransactionID}] Executing #{scriptCmd} #{args.join ' '}"
