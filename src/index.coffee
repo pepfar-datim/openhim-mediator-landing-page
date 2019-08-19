@@ -36,7 +36,7 @@ setupEnv = (script) ->
 
 handler = (script) -> (req, res) ->
   openhimTransactionID = req.headers['x-openhim-transactionid']
-
+  responseHasBeenSent = false
   unless req.query.format
     format = 'csv'
   else
@@ -44,7 +44,8 @@ handler = (script) -> (req, res) ->
   try
     format = format.toLowerCase()
   catch e  
-     res.send "Undefined Collection"
+    responseHasBeenSent = true
+    res.send "Undefined Collection"  
   contenttype = ''
   if format == 'json'
     contenttype = 'application/json'
@@ -103,6 +104,7 @@ handler = (script) -> (req, res) ->
     if req.path == '/datim-imap-export'
       unless req.query.country_code
         res.set 'Content-Type', 'application/json+openhim'
+        responseHasBeenSent = true
         res.send {
           'x-mediator-urn': config.getMediatorConf().urn
           status: 'Failed'
@@ -116,8 +118,24 @@ handler = (script) -> (req, res) ->
         }
       try
         outputObject = JSON.parse(out)
+        if typeof outputObject.status_code != 'undefined'
+          if outputObject.status_code == 409
+            res.set 'Content-Type', 'application/json+openhim'
+            responseHasBeenSent = true
+            res.send {
+              'x-mediator-urn': config.getMediatorConf().urn
+              status: 'Failed'
+              response:
+                status: outputObject.status_code
+                headers:
+                  'content-type': 'text/plain'
+                  'Access-Control-Allow-Origin' : '*'
+                body: outputObject.result
+                timestamp: new Date()
+            }
       catch e
         res.set 'Content-Type', 'application/json+openhim'
+        responseHasBeenSent = true
         res.send {
           'x-mediator-urn': config.getMediatorConf().urn
           status: 'Failed'
@@ -129,23 +147,11 @@ handler = (script) -> (req, res) ->
             body: out
             timestamp: new Date()
         }
-      if outputObject.status_code == 409
-        res.set 'Content-Type', 'application/json+openhim'
-        res.send {
-          'x-mediator-urn': config.getMediatorConf().urn
-          status: 'Failed'
-          response:
-            status: outputObject.status_code
-            headers:
-              'content-type': 'text/plain'
-              'Access-Control-Allow-Origin' : '*'
-            body: outputObject.result
-            timestamp: new Date()
-        }
     if req.path == '/datim-imap-status'
 
       outputObject = JSON.parse(out)
       res.set 'Content-Type', 'application/json+openhim'
+      responseHasBeenSent = true
       res.send {
         'x-mediator-urn': config.getMediatorConf().urn
         status: if outputObject.status_code == 200 or outputObject.status_code == 202 then 'Successful' else 'Failed'
@@ -157,11 +163,11 @@ handler = (script) -> (req, res) ->
           body: outputObject.result
           timestamp: new Date()
       }
-      
-    res.set 'Content-Type', contenttype
-    if format == 'csv'
-      res.set 'Content-Disposition', 'inline; filename="'+collection+'.csv"' 
-    res.send out
+    if responseHasBeenSent == false
+      res.set 'Content-Type', contenttype
+      if format == 'csv'
+        res.set 'Content-Disposition', 'inline; filename="'+collection+'.csv"' 
+      res.send out
 
     
 
