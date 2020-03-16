@@ -86,8 +86,31 @@ handler = (script) -> (req, res) ->
   else if req.path == '/datim-moh'
       argsFromRequest = [scriptCmd, format, period]
       cmd = spawn 'python', argsFromRequest
+  #else if req.path == '/show-msp'
+      #argsFromRequest = [scriptCmd, format, period]
+     # cmd = spawn 'pipenv run python', argsFromRequest
   else 
-    cmd = spawn scriptCmd, argsFromRequest
+    i = 0
+    while i < args.length
+      if args[i] == '--format'
+        args[i + 1] = format
+      i++
+    if collection
+      i = 0
+      while i < args.length
+        if args[i] == '--repo'
+          args[i + 1] = collection
+        i++
+    else if req.query.dataElements
+      i = args.indexOf '--repo'
+      args.splice i,2
+      i = 0
+      args.push ("--dataelements")
+      args.push (req.query.dataElements)
+    args.unshift scriptCmd
+    logger.info "[#{argsFromRequest}]}"
+    cmd = spawn 'python', args
+   # cmd = spawn scriptCmd, argsFromRequest
   logger.info "[#{openhimTransactionID}] Executing #{scriptCmd} #{args.join ' '}"
   logger.info "Format is #{format} and collection is #{collection}"
 
