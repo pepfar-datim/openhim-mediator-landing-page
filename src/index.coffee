@@ -82,10 +82,10 @@ handler = (script) -> (req, res) ->
   #cmd = spawn scriptCmd, args, env: setupEnv(script)
   if req.path == '/datim-imap-status'
     argsFromRequest = [scriptCmd, import_task_id]
-    cmd = spawn 'python', argsFromRequest
+    cmd = spawn '/home/openhim-core/.local/share/virtualenvs/ocl_datim-viNFXhy9/bin/python', argsFromRequest
   else if req.path == '/datim-moh'
       argsFromRequest = [scriptCmd, format, period]
-      cmd = spawn 'python', argsFromRequest
+      cmd = spawn '/home/openhim-core/.local/share/virtualenvs/ocl_datim-viNFXhy9/bin/python', argsFromRequest
   #else if req.path == '/show-msp'
       #argsFromRequest = [scriptCmd, format, period]
      # cmd = spawn 'pipenv run python', argsFromRequest
@@ -109,7 +109,7 @@ handler = (script) -> (req, res) ->
       args.push (req.query.dataElements)
     args.unshift scriptCmd
     logger.info "[#{argsFromRequest}]}"
-    cmd = spawn 'python', args
+    cmd = spawn '/home/openhim-core/.local/share/virtualenvs/ocl_datim-viNFXhy9/bin/python', args
    # cmd = spawn scriptCmd, argsFromRequest
   logger.info "[#{openhimTransactionID}] Executing #{scriptCmd} #{args.join ' '}"
   logger.info "Format is #{format} and collection is #{collection}"
