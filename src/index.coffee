@@ -101,6 +101,18 @@ handler = (script) -> (req, res) ->
         if args[i] == '--repo'
           args[i + 1] = collection
         i++
+    if period
+      i = 0
+      while i < args.length
+        if args[i] == '--period'
+          args[i + 1] = period
+        i++
+    if country_code
+      i = 0
+      while i < args.length
+        if args[i] == '--country_code'
+          args[i + 1] = country_code
+        i++
     else if req.query.dataElements
       i = args.indexOf '--repo'
       args.splice i,2
@@ -108,7 +120,7 @@ handler = (script) -> (req, res) ->
       args.push ("--dataelements")
       args.push (req.query.dataElements)
     args.unshift scriptCmd
-    logger.info "[#{argsFromRequest}]}"
+    logger.info "[#{args}]}"
     cmd = spawn '/home/openhim-core/.local/share/virtualenvs/ocl_datim-viNFXhy9/bin/python', args
    # cmd = spawn scriptCmd, argsFromRequest
   logger.info "[#{openhimTransactionID}] Executing #{scriptCmd} #{args.join ' '}"
@@ -139,7 +151,7 @@ handler = (script) -> (req, res) ->
             body: "country_code is a required parameter"
             timestamp: new Date()
         }
-      try
+      ###try
         outputObject = JSON.parse(out)
         if typeof outputObject.status_code != 'undefined'
           if outputObject.status_code == 409
@@ -153,7 +165,7 @@ handler = (script) -> (req, res) ->
                 headers:
                   'content-type': 'text/plain'
                   'Access-Control-Allow-Origin' : '*'
-                body: outputObject.result
+                body: out
                 timestamp: new Date()
             }
       catch e
@@ -169,7 +181,7 @@ handler = (script) -> (req, res) ->
               'Access-Control-Allow-Origin' : '*'
             body: out
             timestamp: new Date()
-        }
+        }###
     if req.path == '/datim-imap-status'
 
       outputObject = JSON.parse(out)
