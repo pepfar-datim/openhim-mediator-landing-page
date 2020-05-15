@@ -47,15 +47,14 @@ const setupEnv = function(script) {
 const handler = script => function (req, res) {
   let cmd, format, period,contenttype, outputcsv, out;
   const openhimTransactionID = req.headers['x-openhim-transactionid'];
-  if (req.params.format) {
-    format=req.params.format
+  if (req.query.format) {
+    format=req.query.format
   } else {
     format = 'csv';
   }
   try {
     format = format.toLowerCase();
   } catch (e) {
-    responseHasBeenSent = true;
     res.send("Undefined Collection");
   }
   if (format === 'json') {
@@ -73,16 +72,16 @@ const handler = script => function (req, res) {
   const scriptCmd = path.join(config.getConf().scriptsDirectory, script.filename);
   const args = buildArgs(script);
   if(req.params.collection) {
-    args.push(("--collection"));
+    args.push(("--repo"));
     args.push((req.params.collection));
     outputcsv=req.params.collection;
   }
   else {
     outputcsv='datim-MOH'+req.params.period;
   }
-  if(req.params.format) {
+  if(req.query.format) {
     args.push(("--format"));
-    args.push((req.params.format));
+    args.push((req.query.format));
   }
   if(req.params.period) {
     args.push(("--period"));
@@ -91,10 +90,11 @@ const handler = script => function (req, res) {
   args.unshift(scriptCmd);
   logger.info(`[${args}]}`);
   cmd = spawn('/home/openhim-core/.local/share/virtualenvs/ocl_datim-viNFXhy9/bin/python', args);
-  }
-   // cmd = spawn scriptCmd, argsFromRequest
   logger.info(`[${openhimTransactionID}] Executing ${scriptCmd} ${args.join(' ')}`);
-  const appendToOut = data => out = `${out}${data}`;
+  const appendToOut = function (data) {
+  out = `${out}${data}`
+  return logger.info(`[${openhimTransactionID}] Script output: ${data}`)
+}
   cmd.stdout.on('data', appendToOut);
   cmd.stderr.on('data', appendToOut);
 
@@ -102,35 +102,18 @@ const handler = script => function (req, res) {
   return cmd.on('close', function(code) {
     logger.info(`[${openhimTransactionID}] Script exited with status ${code}`);
 
-    const outputObject = out;
     if (format) {
       res.set('Content-Type', contenttype);
       if (format === 'csv') {
         res.set('Content-Disposition', 'inline; filename="'+outputcsv+'.csv"');
       }
-      return res.send(outputObject);
     }
-    return res.send({
-      'x-mediator-urn': config.getMediatorConf().urn,
-      status: code === 0 ? 'Successful' : 'Failed',
-      response: {
-        status: code === 0 ? 200 : 500,
-        headers: {
-          'content-type': 'application/json'
-        },
-        body: outputObject,
-        timestamp: new Date()
-      }
-    });
+    return res.send (out);
 });
 }
 
-    
-/* Express Code */
-
-let app = null;
-let server = null;
-
+let app = null
+let server = null
 
 const getAvailableScripts = callback => fs.readdir(config.getConf().scriptsDirectory, callback);
 
