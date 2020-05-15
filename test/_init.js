@@ -1,1 +1,1 @@
-require '../lib/init'
+require('../src/init')

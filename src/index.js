@@ -1,10 +1,3 @@
-/*
- * decaffeinate suggestions:
- * DS101: Remove unnecessary use of Array.from
- * DS102: Remove unnecessary code created because of implicit returns
- * DS207: Consider shorter variations of null checks
- * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
- */
 require('./init');
 
 const logger = require('winston');
@@ -16,9 +9,7 @@ const mediatorUtils = require('openhim-mediator-utils');
 const util = require('./util');
 const fs = require('fs');
 const path = require('path');
-const {
-  spawn
-} = require('child_process');
+const spawn = require('child_process').spawn;
 
 const buildArgs = function(script) {
   const args = [];
@@ -53,24 +44,20 @@ const setupEnv = function(script) {
 };
 
 
-const handler = script => (function(req, res) {
-  let cmd, exclude_empty_maps, format, include_extra_info, period, verbosity;
+const handler = script => function (req, res) {
+  let cmd, format, period,contenttype, outputcsv, out;
   const openhimTransactionID = req.headers['x-openhim-transactionid'];
-  let responseHasBeenSent = false;
-  if (!req.query.format) {
-    format = 'csv';
+  if (req.params.format) {
+    format=req.params.format
   } else {
-    ({
-      format
-    } = req.query);
+    format = 'csv';
   }
   try {
     format = format.toLowerCase();
-  } catch (e) {  
+  } catch (e) {
     responseHasBeenSent = true;
-    res.send("Undefined Collection");  
+    res.send("Undefined Collection");
   }
-  let contenttype = '';
   if (format === 'json') {
     contenttype = 'application/json';
   }
@@ -83,201 +70,63 @@ const handler = script => (function(req, res) {
   if (format === 'csv') {
     contenttype = 'application/csv';
   }
-  const {
-    collection
-  } = req.query;
-  const {
-    country_code
-  } = req.query;
-  if (!req.query.period) {
-    period= "default";
-  } else {
-    ({
-      period
-    } = req.query);
-  }
-  if (!req.query.verbosity) {
-    verbosity= 0;
-  } else {
-    ({
-      verbosity
-    } = req.query);
-  }
-  if (!req.query.exclude_empty_maps) {
-    exclude_empty_maps='true';
-  } else {
-    ({
-      exclude_empty_maps
-    } = req.query);
-  }
-  if (!req.query.include_extra_info) {
-    include_extra_info='false';
-  } else {
-    ({
-      include_extra_info
-    } = req.query);
-  }
-  const {
-    import_task_id
-  } = req.query;
   const scriptCmd = path.join(config.getConf().scriptsDirectory, script.filename);
   const args = buildArgs(script);
-  let argsFromRequest = [format, collection];
-  if ((collection == null)) {
-     argsFromRequest = [country_code,format,period,verbosity,exclude_empty_maps,include_extra_info];
-   }
-  //cmd = spawn scriptCmd, args, env: setupEnv(script)
-  if (req.path === '/datim-imap-status') {
-    argsFromRequest = [scriptCmd, import_task_id];
-    cmd = spawn('/home/openhim-core/.local/share/virtualenvs/ocl_datim-viNFXhy9/bin/python', argsFromRequest);
-  } else if (req.path === '/datim-moh') {
-      argsFromRequest = [scriptCmd, format, period];
-      cmd = spawn('/home/openhim-core/.local/share/virtualenvs/ocl_datim-viNFXhy9/bin/python', argsFromRequest);
-  //else if req.path == '/show-msp'
-      //argsFromRequest = [scriptCmd, format, period]
-     // cmd = spawn 'pipenv run python', argsFromRequest
-  } else { 
-    let i = 0;
-    while (i < args.length) {
-      if (args[i] === '--format') {
-        args[i + 1] = format;
-      }
-      i++;
-    }
-    if (collection) {
-      i = 0;
-      while (i < args.length) {
-        if (args[i] === '--repo') {
-          args[i + 1] = collection;
-        }
-        i++;
-      }
-    }
-    if (period) {
-      i = 0;
-      while (i < args.length) {
-        if (args[i] === '--period') {
-          args[i + 1] = period;
-        }
-        i++;
-      }
-    }
-    if (country_code) {
-      i = 0;
-      while (i < args.length) {
-        if (args[i] === '--country_code') {
-          args[i + 1] = country_code;
-        }
-        i++;
-      }
-    } else if (req.query.dataElements) {
-      i = args.indexOf('--repo');
-      args.splice(i,2);
-      i = 0;
-      args.push(("--dataelements"));
-      args.push((req.query.dataElements));
-    }
-    args.unshift(scriptCmd);
-    logger.info(`[${args}]}`);
-    cmd = spawn('/home/openhim-core/.local/share/virtualenvs/ocl_datim-viNFXhy9/bin/python', args);
+  if(req.params.collection) {
+    args.push(("--collection"));
+    args.push((req.params.collection));
+    outputcsv=req.params.collection;
+  }
+  else {
+    outputcsv='datim-MOH'+req.params.period;
+  }
+  if(req.params.format) {
+    args.push(("--format"));
+    args.push((req.params.format));
+  }
+  if(req.params.period) {
+    args.push(("--period"));
+    args.push((req.params.period));
+  }
+  args.unshift(scriptCmd);
+  logger.info(`[${args}]}`);
+  cmd = spawn('/home/openhim-core/.local/share/virtualenvs/ocl_datim-viNFXhy9/bin/python', args);
   }
    // cmd = spawn scriptCmd, argsFromRequest
   logger.info(`[${openhimTransactionID}] Executing ${scriptCmd} ${args.join(' ')}`);
-  logger.info(`Format is ${format} and collection is ${collection}`);
-
-  let out = "";
   const appendToOut = data => out = `${out}${data}`;
   cmd.stdout.on('data', appendToOut);
   cmd.stderr.on('data', appendToOut);
-  
+
   res.set('Access-Control-Allow-Origin', '*');
   return cmd.on('close', function(code) {
     logger.info(`[${openhimTransactionID}] Script exited with status ${code}`);
-    //res.set 'Content-Type', 'application/json+openhim'
 
-    if (req.path === '/datim-imap-export') {
-      if (!req.query.country_code) {
-        res.set('Content-Type', 'application/json+openhim');
-        responseHasBeenSent = true;
-        res.send({
-          'x-mediator-urn': config.getMediatorConf().urn,
-          status: 'Failed',
-          response: {
-            status: 400,
-            headers: {
-              'content-type': 'text/plain',
-              'Access-Control-Allow-Origin' : '*'
-            },
-            body: "country_code is a required parameter",
-            timestamp: new Date()
-          }
-        });
-      }
-      /*try
-        outputObject = JSON.parse(out)
-        if typeof outputObject.status_code != 'undefined'
-          if outputObject.status_code == 409
-            res.set 'Content-Type', 'application/json+openhim'
-            responseHasBeenSent = true
-            res.send {
-              'x-mediator-urn': config.getMediatorConf().urn
-              status: 'Failed'
-              response:
-                status: outputObject.status_code
-                headers:
-                  'content-type': 'text/plain'
-                  'Access-Control-Allow-Origin' : '*'
-                body: out
-                timestamp: new Date()
-            }
-      catch e
-        res.set 'Content-Type', 'application/json+openhim'
-        responseHasBeenSent = true
-        res.send {
-          'x-mediator-urn': config.getMediatorConf().urn
-          status: 'Failed'
-          response:
-            status: 404
-            headers:
-              'content-type': 'text/plain'
-              'Access-Control-Allow-Origin' : '*'
-            body: out
-            timestamp: new Date()
-        }*/
-    }
-    if (req.path === '/datim-imap-status') {
-
-      const outputObject = JSON.parse(out);
-      res.set('Content-Type', 'application/json+openhim');
-      responseHasBeenSent = true;
-      res.send({
-        'x-mediator-urn': config.getMediatorConf().urn,
-        status: (outputObject.status_code === 200) || (outputObject.status_code === 202) ? 'Successful' : 'Failed',
-        response: {
-          status: outputObject.status_code,
-          headers: {
-            'content-type': 'text/plain',
-            'Access-Control-Allow-Origin' : '*'
-          },
-          body: outputObject.result,
-          timestamp: new Date()
-        }
-      });
-    }
-    if (responseHasBeenSent === false) {
+    const outputObject = out;
+    if (format) {
       res.set('Content-Type', contenttype);
       if (format === 'csv') {
-        res.set('Content-Disposition', 'inline; filename="'+collection+'.csv"'); 
+        res.set('Content-Disposition', 'inline; filename="'+outputcsv+'.csv"');
       }
-      return res.send(out);
+      return res.send(outputObject);
     }
-  });
+    return res.send({
+      'x-mediator-urn': config.getMediatorConf().urn,
+      status: code === 0 ? 'Successful' : 'Failed',
+      response: {
+        status: code === 0 ? 200 : 500,
+        headers: {
+          'content-type': 'application/json'
+        },
+        body: outputObject,
+        timestamp: new Date()
+      }
+    });
 });
+}
 
     
-
-
-// Express
+/* Express Code */
 
 let app = null;
 let server = null;
