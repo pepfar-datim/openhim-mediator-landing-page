@@ -45,7 +45,7 @@ const setupEnv = function(script) {
 
 
 const handler = script => function (req, res) {
-  let cmd, format, period,contenttype, outputcsv, out;
+  let cmd, format, period,contenttype, outputcsv, out="";
   const openhimTransactionID = req.headers['x-openhim-transactionid'];
   if (req.query.format) {
     format=req.query.format
@@ -76,6 +76,11 @@ const handler = script => function (req, res) {
     args.push((req.params.collection));
     outputcsv=req.params.collection;
   }
+  else if(req.query.dataElements) {
+    args.push(("--dataelements"));
+    args.push((req.query.dataElements));
+    outputcsv="mspDataElements";
+  }
   else {
     outputcsv='datim-MOH'+req.params.period;
   }
@@ -91,10 +96,7 @@ const handler = script => function (req, res) {
   logger.info(`[${args}]}`);
   cmd = spawn('/home/openhim-core/.local/share/virtualenvs/ocl_datim-viNFXhy9/bin/python', args);
   logger.info(`[${openhimTransactionID}] Executing ${scriptCmd} ${args.join(' ')}`);
-  const appendToOut = function (data) {
-  out = `${out}${data}`
-  return logger.info(`[${openhimTransactionID}] Script output: ${data}`)
-}
+  const appendToOut = data => out = `${out}${data}`;
   cmd.stdout.on('data', appendToOut);
   cmd.stderr.on('data', appendToOut);
 
