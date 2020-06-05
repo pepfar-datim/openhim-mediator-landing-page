@@ -52,21 +52,19 @@ const handler = script => function (req, res) {
   } else {
     format = 'csv';
   }
-  try {
-    format = format.toLowerCase();
-  } catch (e) {
-    res.send("Undefined Collection");
-  }
+  format = format.toLowerCase();
   if (format === 'json') {
     contenttype = 'application/json';
   }
-  if (format === 'html') {
+  else if (format === 'html') {
     contenttype = 'text/html';
   }
-  if (format === 'xml') {
+  else if (format === 'xml') {
     contenttype = 'application/xml';
   }
-  if (format === 'csv') {
+  else {
+    /*default to CSV*/
+    format = "csv";
     contenttype = 'application/csv';
   }
   const scriptCmd = path.join(config.getConf().scriptsDirectory, script.filename);
@@ -84,10 +82,8 @@ const handler = script => function (req, res) {
   else {
     outputcsv='datim-MOH'+req.params.period;
   }
-  if(req.query.format) {
-    args.push(("--format"));
-    args.push((req.query.format));
-  }
+  args.push(("--format"));
+  args.push(format);
   if(req.params.period) {
     args.push(("--period"));
     args.push((req.params.period));
