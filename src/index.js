@@ -50,7 +50,7 @@ const handler = script => function (req, res) {
   if (req.query.format) {
     format=req.query.format
   } else {
-    format = 'csv';
+    format = 'json';
   }
   format = format.toLowerCase();
   if (format === 'json') {
@@ -63,9 +63,9 @@ const handler = script => function (req, res) {
     contenttype = 'application/xml';
   }
   else {
-    /*default to CSV*/
-    format = "csv";
-    contenttype = 'application/csv';
+    /*default to json*/
+    format = "json";
+    contenttype = 'application/json';
   }
   const scriptCmd = path.join(config.getConf().scriptsDirectory, script.filename);
   const args = buildArgs(script);
@@ -85,8 +85,14 @@ const handler = script => function (req, res) {
   args.push(("--format"));
   args.push(format);
   if(req.params.period) {
+    period=req.params.period;
+  }
+  else if (req.query.period){
+    period=req.query.period;
+  }
+  if (period){
     args.push(("--period"));
-    args.push((req.params.period));
+    args.push((period));
   }
   args.unshift(scriptCmd);
   logger.info(`[${args}]}`);
