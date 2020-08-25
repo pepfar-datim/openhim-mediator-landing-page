@@ -62,6 +62,9 @@ const handler = script => function (req, res) {
   else if (format === 'xml') {
     contenttype = 'application/xml';
   }
+  else if (format === 'csv') {
+    contenttype = 'application/csv';
+  }
   else {
     /*default to json*/
     format = "json";
