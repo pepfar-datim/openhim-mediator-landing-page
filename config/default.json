@@ -14,5 +14,5 @@
       "trustSelfSigned": false
     }
   },
-  "scriptsDirectory": "/opt/openhim-landing-page"
+  "scriptsDirectory": "/opt/ocl_datim"
 }
