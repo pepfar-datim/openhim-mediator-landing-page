@@ -22,7 +22,7 @@
   "main": "src/index.js",
   "dependencies": {
     "body-parser": "^1.15.0",
-    "express": "^4.13.4",
+    "express": "^4.17.3",
     "moment": "^2.11.2",
     "openhim-mediator-utils": "^0.2.2",
     "request": "^2.65.0",
